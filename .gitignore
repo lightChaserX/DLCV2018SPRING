@@ -3,3 +3,8 @@ __pycache__/
 *.dat
 ~*
 dataset/
+FCN32s*/
+FCN8s*/
+val*/
+*.pkl
+*.pth

@@ -1,17 +1,15 @@
 import os
-
-import numpy as np
 import torch
-import torch.nn as nn
-import torchvision
+from torch import nn
+from torchvision import models
 from utils import *
 
 '''
-TODO: Define the model of VGG16-FCN32s
+TODO: Define the model of VGG16-FCN8s
 '''
-class FCN32s(nn.Module):
+class FCN8s(nn.Module):
     def __init__(self, n_class=21):
-        super(FCN32s, self).__init__()
+        super(FCN8s, self).__init__()
         ## conv1
         self.conv1_1 = nn.Conv2d(3, 64, kernel_size=3, padding=100)
         self.relu1_1 = nn.ReLU(inplace=True)
@@ -53,18 +51,26 @@ class FCN32s(nn.Module):
         self.relu5_3 = nn.ReLU(inplace=True)
         self.pool5   = nn.MaxPool2d(2, stride=2, ceil_mode=True)
 
-        # #fc6
-        self.fc6   = nn.Conv2d(512, 4096, kernel_size=7)
+        # fc6
+        self.fc6   = nn.Conv2d(512, 4096, 7)
         self.relu6 = nn.ReLU(inplace=True)
-        self.drop6 = nn.Dropout2d(p=0.5)
+        self.drop6 = nn.Dropout2d()
 
         # fc7
-        self.fc7   = nn.Conv2d(4096, 4096, kernel_size=1)
+        self.fc7   = nn.Conv2d(4096, 4096, 1)
         self.relu7 = nn.ReLU(inplace=True)
-        self.drop7 = nn.Dropout2d(p=0.5)
+        self.drop7 = nn.Dropout2d()
 
-        self.score_fr = nn.Conv2d(4096, n_class, kernel_size=1)
-        self.upscore = nn.ConvTranspose2d(n_class, n_class, 64, stride=32, bias=False)
+        self.score_fr    = nn.Conv2d(4096, n_class, 1)
+        self.score_pool3 = nn.Conv2d(256, n_class, 1)
+        self.score_pool4 = nn.Conv2d(512, n_class, 1)
+
+        self.upscore2 = nn.ConvTranspose2d(
+            n_class, n_class, 4, stride=2, bias=False)
+        self.upscore8 = nn.ConvTranspose2d(
+            n_class, n_class, 16, stride=8, bias=False)
+        self.upscore_pool4 = nn.ConvTranspose2d(
+            n_class, n_class, 4, stride=2, bias=False)
 
         self._initialize_weights()
     
@@ -116,11 +122,13 @@ class FCN32s(nn.Module):
         h = self.relu3_2(self.conv3_2(h))
         h = self.relu3_3(self.conv3_3(h))
         h = self.pool3(h)
+        pool3 = h
 
         h = self.relu4_1(self.conv4_1(h))
         h = self.relu4_2(self.conv4_2(h))
         h = self.relu4_3(self.conv4_3(h))
         h = self.pool4(h)
+        pool4 = h
 
         h = self.relu5_1(self.conv5_1(h))
         h = self.relu5_2(self.conv5_2(h))
@@ -132,11 +140,33 @@ class FCN32s(nn.Module):
 
         h = self.relu7(self.fc7(h))
         h = self.drop7(h)
-
+        
+        ## 2x conv7
         h = self.score_fr(h)
-
-        h = self.upscore(h)
-        h = h[:, :, 19:19 + x.size()[2], 19:19 + x.size()[3]].contiguous()
+        h = self.upscore2(h)
+        upscore2 = h
+        
+        ## 2x conv7 + pool4
+        h = self.score_pool4(pool4)
+        h = h[:, :, 5:5 + upscore2.size()[2], 5:5 + upscore2.size()[3]]
+        score_pool4c = h
+        h = upscore2 + score_pool4c
+        
+        ## 2x (2x conv7 + pool4)
+        h = self.upscore_pool4(h)
+        upscore_pool4 = h
+        
+        ## 2x (2x conv7 + pool4) +pool3
+        h = self.score_pool3(pool3)
+        h = h[:, :,
+              9:9 + upscore_pool4.size()[2],
+              9:9 + upscore_pool4.size()[3]]
+        score_pool3c = h
+        h = upscore_pool4 + score_pool3c
+        
+        ## 8x
+        h = self.upscore8(h)
+        h = h[:, :, 31:31 + x.size()[2], 31:31 + x.size()[3]].contiguous()
 
         return h
 
@@ -150,5 +180,5 @@ class FCN32s(nn.Module):
         for i, name in zip([0, 3], ['fc6', 'fc7']):
             l1 = vgg16.classifier[i]
             l2 = getattr(self, name)
-            l2.weight.data = l1.weight.data.view(l2.weight.size())
-            l2.bias.data = l1.bias.data.view(l2.bias.size())
+            l2.weight.data.copy_(l1.weight.data.view(l2.weight.size()))
+            l2.bias.data.copy_(l1.bias.data.view(l2.bias.size()))
