@@ -8,3 +8,4 @@ FCN8s*/
 val*/
 *.pkl
 *.pth
+model_test.py
