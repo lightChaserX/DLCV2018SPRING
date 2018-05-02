@@ -182,3 +182,15 @@ class FCN8s(nn.Module):
             l2 = getattr(self, name)
             l2.weight.data.copy_(l1.weight.data.view(l2.weight.size()))
             l2.bias.data.copy_(l1.bias.data.view(l2.bias.size()))
+            
+    def copy_params_from_FCN32s(self, FCN32s):
+        for name, layer1 in FCN32s.named_children():
+            try:
+                layer2 = getattr(self, name)
+                layer2.weight
+            except Exception:
+                continue
+            layer2.weight.data.copy_(layer1.weight.data)
+            if layer1.bias is not None:
+                assert layer1.bias.size() == layer2.bias.size()
+                layer2.bias.data.copy_(layer1.bias.data)

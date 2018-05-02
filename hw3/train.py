@@ -73,9 +73,14 @@ if resume:
     curr_ep = int(pkl_list[-1][2:6])
     print('resume from epoch {:04d}'.format(curr_ep))
 else:
-    VGG16_net = torchvision.models.vgg16(pretrained=False)
-    VGG16_net.load_state_dict(torch.load('vgg16-new.pth'))
-    net.copy_params_from_vgg16(VGG16_net)
+    if model_name == 'FCN8s':
+        FCN32s_model = FCN32s(n_class)
+        FCN32s_model.load_state_dict(torch.load(os.path.join('FCN32s04_Model', 'ep0079_model.pkl')))
+        net.copy_params_from_FCN32s(FCN32s_model)
+    else:
+        VGG16_net = torchvision.models.vgg16(pretrained=False)
+        VGG16_net.load_state_dict(torch.load('vgg16-new.pth'))
+        net.copy_params_from_vgg16(VGG16_net)
     curr_ep = 0
 
 net.cuda()
@@ -83,6 +88,10 @@ if parallel:
     print('Train parallel')
     net = torch.nn.DataParallel(net).cuda()
 
+#lbl_weight = Variable(torch.FloatTensor([0.29873678, 0.0560519 , 0.38079318, 0.2786428 , 1.,
+#       0.40306586, 0.2]))
+lbl_weight = Variable(torch.FloatTensor([1, 0.75, 1.25, 1, 1, 1, 1]))
+#criterion = CrossEntropyLoss2d(weight=lbl_weight).cuda()
 criterion = CrossEntropyLoss2d().cuda()
 #optimizer = optim.Adam(net.parameters(), lr=lr)
 optimizer = optim.SGD(net.parameters(), lr=lr, momentum=0.95, weight_decay=5e-4)

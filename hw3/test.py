@@ -30,17 +30,26 @@ args = parser.parse_args()
 
 n_class     = 7
 down_scale  = 1
-model_id    = 1
-ep          = 4
+model_id    = 5
+ep          = 0
 model_name  = args.model_name
 input_filepath    = args.g
 output_filepath   = args.p
 
-
+if not (os.path.exists('baseline_model.pkl') and os.path.exists('improved_model.pkl')):
+    file_id = '1f26NDZJ7qRgf0FK8rdt4cgH-KRdFV79_'
+    destination = 'model.zip'
+    download_file_from_google_drive(file_id, destination)
+    
+    zip_ref = zipfile.ZipFile(destination, 'r')
+    zip_ref.extractall('.')
+    zip_ref.close()
+    
 exec('net = %s(n_class)' % (model_name))
-
-net.load_state_dict(torch.load('{}{:02d}_Model/ep{:04d}_model.pkl'.format(model_name, model_id, ep)))
-
+if model_name == 'FCN32s':    
+    net.load_state_dict(torch.load('baseline_model.pkl'))
+elif model_name == 'FCN8s':
+    net.load_state_dict(torch.load('improved_model.pkl'))
 net.cuda()
 
 
@@ -79,4 +88,4 @@ for im_name in im_list:
         im_save_name = os.path.join(output_filepath, im_name[-12:-8]+'_mask.png')
         cv2.imwrite(im_save_name, label_im[:,:,::-1])
         print('saving {} finished'.format(im_save_name))
-print(totol_acc/len(im_list))
+print('avr loss{}'.format(totol_acc/len(im_list)))
