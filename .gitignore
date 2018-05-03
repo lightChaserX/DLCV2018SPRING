@@ -9,3 +9,4 @@ val*/
 *.pkl
 *.pth
 model_test.py
+*.ipynb
