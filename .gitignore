@@ -1,6 +1,7 @@
 __pycache__/
 .ipynb_checkpoints
 *.dat
+*.data
 ~*
 dataset/
 FCN32s*/
@@ -10,3 +11,7 @@ val*/
 *.pth
 model_test.py
 *.ipynb
+run*/
+tensorboard_test.py
+*.json
+hw4_data/
