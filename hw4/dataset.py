@@ -9,12 +9,12 @@ import torch.utils.data as data
 '''
 TODO: Get Data Loader
 '''
-def get_data_loader(filepath, batch_size, lbl=False):
+def get_data_loader(filepath, batch_size, lbl=False, attr='Bangs'):
   dataset = []
   if not lbl:
       dataset = dataset_image(filepath)
   else:
-      dataset = dataset_image_lbl(filepath)
+      dataset = dataset_image_lbl(filepath, attr)
   return torch.utils.data.DataLoader(dataset=dataset, 
                                      batch_size=batch_size, 
                                      shuffle=True, 
@@ -58,11 +58,11 @@ class dataset_image(data.Dataset):
 TODO: Image Dataset
 '''
 class dataset_image_lbl(data.Dataset):
-  def __init__(self, filepath):
+  def __init__(self, filepath, attr):
     self.filepath = filepath
     full_list = pd.read_csv(filepath + '.csv')
     self.img_list = full_list['image_name']
-    self.Bangs = full_list['Bangs']
+    self.Bangs = full_list[attr]
     self.dataset_size = len(self.img_list)
 
   def __getitem__(self, index):

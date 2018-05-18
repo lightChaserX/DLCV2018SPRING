@@ -63,8 +63,8 @@ torch.manual_seed(args.manualSeed)
 torch.cuda.manual_seed_all(args.manualSeed)
 
 # Training data
-train_loader = get_data_loader(trainfilepath, batch_size, lbl=True)
-valid_loader = get_data_loader(validfilepath, batch_size, lbl=True)
+train_loader = get_data_loader(trainfilepath, batch_size, lbl=True, attr='Smiling')
+#valid_loader = get_data_loader(validfilepath, batch_size, lbl=True)
 
 # Save dir
 model_dir = '{}{:02d}_Model'.format(model_name, model_id)
@@ -77,7 +77,7 @@ d_optimizer = optim.Adam(D.parameters(), lr=d_lr, betas=(beta1, 0.999))
 g_optimizer = optim.Adam(G.parameters(), lr=g_lr, betas=(beta1, 0.999))
 # loss functions
 dis_criterion = nn.BCELoss()
-aux_criterion = nn.NLLLoss()
+aux_criterion = nn.CrossEntropyLoss()#nn.NLLLoss()
 
 iterations = 0
 curr_ep = 0
@@ -98,8 +98,9 @@ for ep in range(curr_ep, MAX_EPOCHS):
         num_imgs = images.size(0)
         real_img = Variable(images).cuda()
         real_aux_label = Variable(torch.LongTensor(labels)).cuda()
-        real_aux_label_em = Variable(torch.FloatTensor(np.float32(labels))).cuda()
-        fake_aux_label = Variable(torch.LongTensor(np.random.randint(0, 2, num_imgs))).cuda()
+        random_lbl = np.random.randint(0, 2, num_imgs)
+        fake_aux_label = Variable(torch.LongTensor(random_lbl)).cuda()
+        fake_aux_label_em = Variable(torch.FloatTensor(random_lbl)).cuda()
         #real_dis_label = Variable(torch.FloatTensor(np.random.normal(0.85,0.04,num_imgs).clip(0.7,1))).cuda()
         fake_dis_label = Variable(torch.ones(num_imgs)).cuda()
         real_dis_label = Variable(torch.zeros(num_imgs)).cuda()
@@ -111,7 +112,6 @@ for ep in range(curr_ep, MAX_EPOCHS):
         dis_errD_real = dis_criterion(real_dis_out, real_dis_label)
         aux_errD_real = aux_criterion(real_aux_out, real_aux_label)
         errD_real = dis_errD_real + aux_errD_real
-        #errD_real = dis_errD_real
         errD_real.backward()
         
         real_scores = real_dis_out
@@ -119,12 +119,11 @@ for ep in range(curr_ep, MAX_EPOCHS):
 
         # compute loss of fake_img
         z = Variable(torch.randn(num_imgs, num_z, 1, 1)).cuda()
-        fake_img = G(z, real_aux_label_em)
+        fake_img = G(z, fake_aux_label_em)
         fake_dis_out, fake_aux_out = D(fake_img.detach())
         dis_errD_fake = dis_criterion(fake_dis_out, fake_dis_label)
         aux_errD_fake = aux_criterion(fake_aux_out, fake_aux_label)
         errD_fake = dis_errD_fake + aux_errD_fake
-        #errD_fake = dis_errD_fake
         errD_fake.backward()
         fake_scores = fake_dis_out
         fake_acc = compute_acc(fake_aux_out, fake_aux_label)
@@ -156,6 +155,8 @@ for ep in range(curr_ep, MAX_EPOCHS):
         writer.add_scalars('scores', {'real_im':real_scores_vis,
                                       'fake_im':fake_scores_vis,
                                       'generator':g_scores_vis}, iterations+1)
+        writer.add_scalars('acc', {'fake_acc':fake_acc,
+                                      'real_acc':real_acc}, iterations+1)
         
         if (iterations+1) % save_iterations == 0:
             ## save images

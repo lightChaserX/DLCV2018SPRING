@@ -91,13 +91,19 @@ class VAE(nn.Module):
         latent = self.reparameterize(mu, logvar)
         return latent, mu, logvar
 
-    def forward(self, x, test=False):
-        x = self.encoder(x)
-        x, mu, logvar = self.bottleneck(x)
-        x = self.reparameterize(mu, logvar)
-        if test:
-            x = mu
-        x = self.decoder(x)
+    def forward(self, x, test=False, generate=False, latent=False):
+        if generate:
+            x = self.decoder(x)
+            mu, logvar = 0, 0
+        else:
+            x = self.encoder(x)
+            x, mu, logvar = self.bottleneck(x)
+            z = self.reparameterize(mu, logvar)
+            if test:
+                z = mu
+            x = self.decoder(z)
+            if latent:
+                return z
         return x, mu, logvar
     
     def save(self, dirname, iterations):
@@ -242,11 +248,11 @@ class netG_ACGAN(nn.Module):
         return output
     
     def save(self, dirname, iterations):
-        filename = os.path.join(dirname, 'gen_%08d.pkl' % (iterations + 1))
+        filename = os.path.join(dirname, 'dis_%08d.pkl' % (iterations + 1))
         torch.save(self.state_dict(), filename)
         
     def resume(self, dirname):
-        last_model_name = get_model_list(dirname, "gen")
+        last_model_name = get_model_list(dirname, "dis")
         if last_model_name is None:
             return 0
         self.load_state_dict(torch.load(last_model_name))
@@ -264,8 +270,6 @@ class netD_ACGAN(nn.Module):
         # Convolution 1
         self.conv1 = nn.Sequential(
             nn.Conv2d(3, 16, 3, 2, 1, bias=False),
-            nn.LeakyReLU(0.2, inplace=True),
-            nn.Dropout(0.5, inplace=False),
         )
         # Convolution 2
         self.conv2 = nn.Sequential(

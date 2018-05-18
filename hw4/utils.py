@@ -74,3 +74,13 @@ def compute_acc(preds, labels):
     correct = preds_.eq(labels.data).cpu().sum()
     acc = float(correct) / float(len(labels.data)) * 100.0
     return acc
+
+def get_model_list_f(dirname, key):
+    if os.path.exists(dirname) is False:
+        return None
+    gen_models = [os.path.join(dirname, f) for f in os.listdir(dirname) if
+                os.path.isfile(os.path.join(dirname, f)) and key in f and "pkl" in f]
+    if len(gen_models) == 0:
+        return None
+    gen_models.sort()
+    return gen_models
