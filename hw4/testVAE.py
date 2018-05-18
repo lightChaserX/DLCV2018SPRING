@@ -79,7 +79,7 @@ output, mu, logvar = net(images, test=True)
 ## save images
 
 ## 0
-KLD_loss = pd.read_csv('VAE-loss_KLD.csv')
+KLD_loss = pd.read_csv('CSV/VAE-loss_KLD.csv')
 plt.figure(num=1, figsize=(12, 4), dpi=80, facecolor='w', edgecolor='k')
 plt.subplot(1,2,1)
 plt.plot(KLD_loss['Step'], KLD_loss['Value'], 'b', alpha=0.6)
@@ -88,7 +88,7 @@ plt.xlabel('Steps')
 plt.ylabel('KLD')
 
 plt.subplot(1,2,2)
-MSE_loss = pd.read_csv('VAE-loss_MSE.csv')
+MSE_loss = pd.read_csv('CSV/VAE-loss_MSE.csv')
 plt.plot(KLD_loss['Step'], MSE_loss['Value'], 'r')
 plt.grid(True) 
 plt.xlabel('Steps')

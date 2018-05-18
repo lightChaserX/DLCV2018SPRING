@@ -48,8 +48,8 @@ torch.cuda.manual_seed_all(args.manualSeed)
 
 
 ## 3-2
-g_loss = pd.read_csv('ACGAN_gloss.csv')
-d_loss = pd.read_csv('ACGAN_dloss.csv')
+g_loss = pd.read_csv('CSV/ACGAN_gloss.csv')
+d_loss = pd.read_csv('CSV/ACGAN_dloss.csv')
 plt.figure(num=1, figsize=(12, 4), dpi=80, facecolor='w', edgecolor='k')
 plt.subplot(1,2,1)
 plt.plot(g_loss['Step'], g_loss['Value'], 'b', alpha=0.6, label='g_loss')
@@ -59,8 +59,8 @@ plt.xlabel('Steps')
 plt.ylabel('discriminator loss')
 plt.legend(loc=0)
 
-real_acc = pd.read_csv('ACGAN_real_acc.csv')
-fake_acc = pd.read_csv('ACGAN_fake_acc.csv')
+real_acc = pd.read_csv('CSV/ACGAN_real_acc.csv')
+fake_acc = pd.read_csv('CSV/ACGAN_fake_acc.csv')
 plt.subplot(1,2,2)
 plt.plot(real_acc['Step'], real_acc['Value'], 'b', alpha=0.6, label='real images')
 plt.plot(fake_acc['Step'], fake_acc['Value'], 'r', alpha=0.6, label='fake images')
