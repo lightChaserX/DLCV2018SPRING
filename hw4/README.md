@@ -8,9 +8,9 @@ $ sh hw4.sh <absolute path of hw4_data/> <output_path/>
 ```
 
 <p align="center">
-    <img src=ACGAN_2.gif" width="640"\>
+    <img src="ACGAN_2.gif" width="640"\>
 </p>
 
 <p align="center">
-    <img src=GAN_4.gif" width="640"\>
+    <img src="GAN_4.gif" width="640"\>
 </p>
